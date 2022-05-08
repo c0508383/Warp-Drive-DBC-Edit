@@ -29,7 +29,7 @@ configFile.withReader {
 
 group = "cr0s.warpdrive" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 version = "${config.minecraft_version}-${config.mod_version}.${System.getenv("BUILD_NUMBER") ?: '-'}"
-archivesBaseName = "WarpDrive"
+archivesBaseName = "WarpDrive-DBC"
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
