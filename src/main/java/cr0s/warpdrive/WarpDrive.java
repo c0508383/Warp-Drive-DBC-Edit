@@ -201,7 +201,7 @@ import net.minecraftforge.oredict.RecipeSorter;
                   + "after:icbmclassic;"
 )
 public class WarpDrive {
-	public static final String MODID = "WarpDrive";
+	public static final String MODID = "DBC-WarpDrive";
 	public static final String VERSION = "@version@";
 	public static final boolean isDev = VERSION.equals("@" + "version" + "@") || VERSION.contains("-dev");
 	public static GameProfile gameProfile = new GameProfile(UUID.nameUUIDFromBytes("[WarpDrive]".getBytes()), "[WarpDrive]");
