@@ -187,7 +187,7 @@ import net.minecraftforge.common.util.EnumHelper;
 import net.minecraftforge.oredict.RecipeSorter;
 
 @Mod(modid = WarpDrive.MODID,
-     name = "WarpDrive-DBC",
+     name = "WarpDrive",
      version = WarpDrive.VERSION,
      dependencies = "after:IC2;"
                   + "after:CoFHCore;"
@@ -201,10 +201,10 @@ import net.minecraftforge.oredict.RecipeSorter;
                   + "after:icbmclassic;"
 )
 public class WarpDrive {
-	public static final String MODID = "WarpDrive-DBC";
+	public static final String MODID = "WarpDrive";
 	public static final String VERSION = "@version@";
 	public static final boolean isDev = VERSION.equals("@" + "version" + "@") || VERSION.contains("-dev");
-	public static GameProfile gameProfile = new GameProfile(UUID.nameUUIDFromBytes("[WarpDrive-DBC]".getBytes()), "[WarpDrive-DBC]");
+	public static GameProfile gameProfile = new GameProfile(UUID.nameUUIDFromBytes("[WarpDrive]".getBytes()), "[WarpDrive]");
 	
 	public static Block blockShipCore;
 	public static Block blockShipController;
