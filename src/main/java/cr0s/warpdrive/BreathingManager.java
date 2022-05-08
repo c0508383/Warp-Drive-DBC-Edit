@@ -22,6 +22,7 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.World;
 
 public class BreathingManager {
@@ -46,7 +47,7 @@ public class BreathingManager {
 	
 	private static final HashMap<UUID, Integer> entity_airBlock = new HashMap<>();
 	private static final HashMap<UUID, Integer> player_airTank = new HashMap<>();
-	
+
 	public static boolean hasAirBlock(final EntityLivingBase entityLivingBase, final int x, final int y, final int z) {
 		for (final VectorI vOffset : vAirOffsets) {
 			final VectorI vPosition = new VectorI(x + vOffset.x, y + vOffset.y, z + vOffset.z);
@@ -87,12 +88,12 @@ public class BreathingManager {
 		*/
 	}
 
-	public static int getDBCRace(final EntityLivingBase entityLivingBase){
-		if(!(entityLivingBase instanceof EntityPlayer))
-			return 0;
+	public static int getDBCRace(final EntityPlayer entityLivingBase){
+
+		EntityPlayerMP entityPlayerMP = MinecraftServer.getServer().getConfigurationManager().func_152612_a(entityLivingBase.getCommandSenderName());
 
 		try {
-			return entityLivingBase.getEntityData().getCompoundTag("PlayerPersisted").getByte("jrmcRace");
+			return entityPlayerMP.getEntityData().getCompoundTag("PlayerPersisted").getByte("jrmcRace");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -105,7 +106,7 @@ public class BreathingManager {
 			return AIR_FIRST_BREATH_TICKS;
 
 		try {
-			int race = getDBCRace(entityLivingBase);
+			int race = getDBCRace((EntityPlayer)entityLivingBase);
 			switch(race){
 				case 0://Human
 					return AIR_FIRST_BREATH_TICKS_HUMAN;
@@ -128,9 +129,6 @@ public class BreathingManager {
 		final String idEntity = EntityList.getEntityString(entityLivingBase);
 
 		if (Dictionary.ENTITIES_LIVING_WITHOUT_AIR.contains(idEntity) || entityLivingBase.getClass().getName().equals("noppes.npcs.entity.EntityCustomNpc")) {
-			return;
-		}
-		if (getDBCRace(entityLivingBase) == 4) {
 			return;
 		}
 		
@@ -187,6 +185,10 @@ public class BreathingManager {
 			// damage entity if in vacuum without protection
 			final boolean hasValidSetup = hasValidSetup(entityLivingBase);
 			if (entityLivingBase instanceof EntityPlayer) {
+				if (getDBCRace((EntityPlayer) entityLivingBase) == 4) {
+					return;
+				}
+
 				final EntityPlayerMP player = (EntityPlayerMP) entityLivingBase;
 				air = player_airTank.get(uuidEntity);
 

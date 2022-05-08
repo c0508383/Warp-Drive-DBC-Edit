@@ -47,11 +47,10 @@ public class RenderOverlayAir {
 			return;
 		}
 
-		EntityPlayerMP entityPlayerMP = MinecraftServer.getServer().getConfigurationManager().func_152612_a(entityPlayer.getCommandSenderName());
-		if(BreathingManager.getDBCRace(entityPlayerMP) == 4){
+		if(BreathingManager.getDBCRace(entityPlayer) == 4){
 			return;
 		}
-		
+
 		// get air stats
 		final boolean hasVoidNearby = isVoid(entityPlayer.worldObj, x, y, z)
 		                           || isVoid(entityPlayer.worldObj, x - 2, y, z)
