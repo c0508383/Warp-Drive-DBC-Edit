@@ -88,7 +88,7 @@ public class BreathingManager {
 	}
 
 	public static int getDBCRace(final EntityLivingBase entityLivingBase){
-		if(!(entityLivingBase instanceof EntityPlayerMP))
+		if(!(entityLivingBase instanceof EntityPlayer))
 			return 0;
 
 		try {
@@ -101,7 +101,7 @@ public class BreathingManager {
 	}
 
 	public static int getFirstBreath(final EntityLivingBase entityLivingBase){
-		if(!(entityLivingBase instanceof EntityPlayerMP))
+		if(!(entityLivingBase instanceof EntityPlayer))
 			return AIR_FIRST_BREATH_TICKS;
 
 		try {
@@ -186,7 +186,7 @@ public class BreathingManager {
 
 			// damage entity if in vacuum without protection
 			final boolean hasValidSetup = hasValidSetup(entityLivingBase);
-			if (entityLivingBase instanceof EntityPlayerMP) {
+			if (entityLivingBase instanceof EntityPlayer) {
 				final EntityPlayerMP player = (EntityPlayerMP) entityLivingBase;
 				air = player_airTank.get(uuidEntity);
 
@@ -233,7 +233,7 @@ public class BreathingManager {
 		if (WarpDriveConfig.LOGGING_BREATHING) {
 			WarpDrive.logger.info("Checking inventory for air reserves...");
 		}
-		if (!(entityLivingBase instanceof EntityPlayerMP)) {
+		if (!(entityLivingBase instanceof EntityPlayer)) {
 			return 0;
 		}
 		
@@ -421,8 +421,11 @@ public class BreathingManager {
 		
 		float ratio = sumAirCapacityTicks > 0 ? sumAirStoredTicks / (float) sumAirCapacityTicks : 0.0F;
 
-		if(!hasValidSetup(entityPlayer) && ratio == 0.0F && player_airTank.get(entityPlayer.getUniqueID()) != null){
-			ratio = (float)player_airTank.get(entityPlayer.getUniqueID()) / (float)getFirstBreath(entityPlayer);
+		if(!hasValidSetup(entityPlayer) && ratio == 0.0F){
+			if(player_airTank.get(entityPlayer.getUniqueID()) != null)
+				ratio = (float)player_airTank.get(entityPlayer.getUniqueID()) / (float)getFirstBreath(entityPlayer);
+			else if(entity_airBlock.get(entityPlayer.getUniqueID()) != null)
+				ratio = (float)entity_airBlock.get(entityPlayer.getUniqueID()) / (float)getFirstBreath(entityPlayer);
 		}
 
 		return ratio;
@@ -432,7 +435,7 @@ public class BreathingManager {
 		if (WarpDriveConfig.LOGGING_BREATHING) {
 			WarpDrive.logger.info("Checking inventory for ice electrolysing...");
 		}
-		if (!(entity instanceof EntityPlayerMP)) {
+		if (!(entity instanceof EntityPlayer)) {
 			return 0;
 		}
 		final EntityPlayerMP entityPlayer = (EntityPlayerMP) entity;

@@ -8,6 +8,8 @@ import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.IBlockAccess;
 import org.lwjgl.opengl.GL11;
@@ -41,7 +43,12 @@ public class RenderOverlayAir {
 		
 		// get celestial object
 		final CelestialObject celestialObject = CelestialObjectManager.get(entityPlayer.worldObj, x, z);
-		if (celestialObject == null || celestialObject.hasAtmosphere() || BreathingManager.getDBCRace(entityPlayer) == 4) {// skip (no display) if environment is breathable
+		if (celestialObject == null || celestialObject.hasAtmosphere()) {// skip (no display) if environment is breathable
+			return;
+		}
+
+		EntityPlayerMP entityPlayerMP = MinecraftServer.getServer().getConfigurationManager().func_152612_a(entityPlayer.getCommandSenderName());
+		if(BreathingManager.getDBCRace(entityPlayerMP) == 4){
 			return;
 		}
 		
