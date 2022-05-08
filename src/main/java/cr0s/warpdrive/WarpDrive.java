@@ -187,7 +187,7 @@ import net.minecraftforge.common.util.EnumHelper;
 import net.minecraftforge.oredict.RecipeSorter;
 
 @Mod(modid = WarpDrive.MODID,
-     name = "WarpDrive",
+     name = "DBC WarpDrive",
      version = WarpDrive.VERSION,
      dependencies = "after:IC2;"
                   + "after:CoFHCore;"
