@@ -1,6 +1,7 @@
 package cr0s.warpdrive.render;
 
 import cr0s.warpdrive.BreathingManager;
+import cr0s.warpdrive.client.ClientProxy;
 import cr0s.warpdrive.data.CelestialObjectManager;
 import cr0s.warpdrive.data.CelestialObject;
 
@@ -47,7 +48,7 @@ public class RenderOverlayAir {
 			return;
 		}
 
-		if(BreathingManager.getDBCRace(entityPlayer) == 4){
+		if(ClientProxy.dbcRace == 4){
 			return;
 		}
 
@@ -58,9 +59,10 @@ public class RenderOverlayAir {
 		                           || isVoid(entityPlayer.worldObj, x, y, z - 2)
 		                           || isVoid(entityPlayer.worldObj, x, y, z + 2);
 		final boolean hasValidSetup = BreathingManager.hasValidSetup(entityPlayer);
-		final float ratioAirReserve = BreathingManager.getAirReserveRatio(entityPlayer);
+		final float ratioAirReserve = ClientProxy.airRatio;
 		
 		// start rendering
+		GL11.glPushMatrix();
 		GL11.glEnable(GL11.GL_BLEND);
 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 		
@@ -112,6 +114,7 @@ public class RenderOverlayAir {
 		
 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 		GL11.glDisable(GL11.GL_BLEND);
+		GL11.glPopMatrix();
 	}
 	
 	private boolean isVoid(final IBlockAccess blockAccess, final int x, final int y, final int z) {

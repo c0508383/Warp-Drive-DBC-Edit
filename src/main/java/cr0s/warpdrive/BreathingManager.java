@@ -12,6 +12,7 @@ import cr0s.warpdrive.item.ItemEnergyWrapper;
 import java.util.HashMap;
 import java.util.UUID;
 
+import cr0s.warpdrive.network.PacketHandler;
 import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
@@ -44,9 +45,9 @@ public class BreathingManager {
 	private static final VectorI[] vAirOffsets = { new VectorI(0, 0, 0), new VectorI(0, 1, 0),
 		new VectorI(0, 1, 1), new VectorI(0, 1, -1), new VectorI(1, 1, 0), new VectorI(1, 1, 0),
 		new VectorI(0, 0, 1), new VectorI(0, 0, -1), new VectorI(1, 0, 0), new VectorI(1, 0, 0) };
-	
-	private static final HashMap<UUID, Integer> entity_airBlock = new HashMap<>();
-	private static final HashMap<UUID, Integer> player_airTank = new HashMap<>();
+
+	public static final HashMap<UUID, Integer> entity_airBlock = new HashMap<>();
+	public static final HashMap<UUID, Integer> player_airTank = new HashMap<>();
 
 	public static boolean hasAirBlock(final EntityLivingBase entityLivingBase, final int x, final int y, final int z) {
 		for (final VectorI vOffset : vAirOffsets) {
@@ -88,11 +89,9 @@ public class BreathingManager {
 		*/
 	}
 
-	public static int getDBCRace(final EntityPlayer entityLivingBase){
-
-		EntityPlayerMP entityPlayerMP = MinecraftServer.getServer().getConfigurationManager().func_152612_a(entityLivingBase.getCommandSenderName());
-
+	public static int getDBCRace(final EntityPlayer entityLivingBase) {
 		try {
+			EntityPlayerMP entityPlayerMP = MinecraftServer.getServer().getConfigurationManager().func_152612_a(entityLivingBase.getCommandSenderName());
 			return entityPlayerMP.getEntityData().getCompoundTag("PlayerPersisted").getByte("jrmcRace");
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -107,7 +106,7 @@ public class BreathingManager {
 
 		try {
 			int race = getDBCRace((EntityPlayer)entityLivingBase);
-			switch(race){
+			switch (race) {
 				case 0://Human
 					return AIR_FIRST_BREATH_TICKS_HUMAN;
 				case 1://Saiyan
@@ -130,6 +129,12 @@ public class BreathingManager {
 
 		if (Dictionary.ENTITIES_LIVING_WITHOUT_AIR.contains(idEntity) || entityLivingBase.getClass().getName().equals("noppes.npcs.entity.EntityCustomNpc")) {
 			return;
+		}
+
+		if (entityLivingBase instanceof EntityPlayerMP) {
+			byte race = (byte) getDBCRace((EntityPlayerMP) entityLivingBase);
+			float airRatio = getAirReserveRatio((EntityPlayerMP) entityLivingBase);
+			PacketHandler.sendBreathPacket(entityLivingBase.worldObj, (EntityPlayerMP) entityLivingBase, race, airRatio);
 		}
 		
 		// find an air block
@@ -185,6 +190,10 @@ public class BreathingManager {
 			// damage entity if in vacuum without protection
 			final boolean hasValidSetup = hasValidSetup(entityLivingBase);
 			if (entityLivingBase instanceof EntityPlayer) {
+				byte race = (byte)getDBCRace((EntityPlayer) entityLivingBase);
+				float airRatio = getAirReserveRatio((EntityPlayer) entityLivingBase);
+				PacketHandler.sendBreathPacket(entityLivingBase.worldObj, (EntityPlayerMP) entityLivingBase, race, airRatio);
+
 				if (getDBCRace((EntityPlayer) entityLivingBase) == 4) {
 					return;
 				}

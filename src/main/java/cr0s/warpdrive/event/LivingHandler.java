@@ -142,6 +142,9 @@ public class LivingHandler {
 			  || !((EntityPlayerMP) entityLivingBase).capabilities.isCreativeMode ) {
 				BreathingManager.onLivingUpdateEvent(entityLivingBase, x, y, z);
 			}
+		} else {
+			BreathingManager.player_airTank.remove(entityLivingBase.getUniqueID());
+			BreathingManager.entity_airBlock.remove(entityLivingBase.getUniqueID());
 		}
 		
 		

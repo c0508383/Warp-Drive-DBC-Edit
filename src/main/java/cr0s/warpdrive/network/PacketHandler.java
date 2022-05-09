@@ -51,7 +51,8 @@ public class PacketHandler {
 		simpleNetworkManager.registerMessage(MessageSpawnParticle.class       , MessageSpawnParticle.class       , 4, Side.CLIENT);
 		simpleNetworkManager.registerMessage(MessageVideoChannel.class        , MessageVideoChannel.class        , 5, Side.CLIENT);
 		simpleNetworkManager.registerMessage(MessageTransporterEffect.class   , MessageTransporterEffect.class   , 6, Side.CLIENT);
-		
+		simpleNetworkManager.registerMessage(MessageClientBreath.class   	  , MessageClientBreath.class        , 7, Side.CLIENT);
+
 		simpleNetworkManager.registerMessage(MessageTargeting.class           , MessageTargeting.class           , 100, Side.SERVER);
 		simpleNetworkManager.registerMessage(MessageClientValidation.class    , MessageClientValidation.class    , 101, Side.SERVER);
 		
@@ -62,6 +63,13 @@ public class PacketHandler {
 		} catch (final Exception exception) {
 			throw new RuntimeException(exception);
 		}
+	}
+
+	public static void sendBreathPacket(final World world, final EntityPlayerMP entityPlayerMP, final byte dbcRace, final float airRatio) {
+		assert(!world.isRemote);
+
+		final MessageClientBreath messageClientBreath = new MessageClientBreath(dbcRace,airRatio);
+		simpleNetworkManager.sendTo(messageClientBreath, entityPlayerMP);
 	}
 	
 	// Beam effect sent to client side

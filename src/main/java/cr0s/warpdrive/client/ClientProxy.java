@@ -7,7 +7,9 @@ import cr0s.warpdrive.render.RenderEntityParticleBunch;
 import cpw.mods.fml.client.registry.RenderingRegistry;
 
 public class ClientProxy extends CommonProxy {
-	
+	public static byte dbcRace;
+	public static float airRatio;
+
 	@Override
 	public void registerRendering() {
 		super.registerRendering();
