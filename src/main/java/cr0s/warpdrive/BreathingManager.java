@@ -32,7 +32,7 @@ public class BreathingManager {
 	private static final int AIR_DROWN_TICKS = 20;
 	private static final int AIR_FIRST_BREATH_TICKS = 300;
 
-	private static final int AIR_FIRST_BREATH_TICKS_HUMAN = 1200*5;
+	private static final int AIR_FIRST_BREATH_TICKS_HUMAN = 20*10;//1200*5;
 	private static final int AIR_FIRST_BREATH_TICKS_SAIYAN = 1200*30;
 	private static final int AIR_FIRST_BREATH_TICKS_HALFSAIYAN = 1200*20;
 	private static final int AIR_FIRST_BREATH_TICKS_NAMEKIAN = 1200*45;
@@ -182,7 +182,7 @@ public class BreathingManager {
 			if (air != null && air > 0) {
 				entity_airBlock.put(uuidEntity, air - 1);
 				return;
-			} else if (air == null) {
+			} else if (air == null && !(entityLivingBase instanceof EntityPlayer)) {
 				entity_airBlock.put(uuidEntity, getFirstBreath(entityLivingBase));
 				return;
 			}
@@ -222,7 +222,8 @@ public class BreathingManager {
 						player_airTank.put(uuidEntity, getFirstBreath(entityLivingBase));
 					} else if (air <= 1) {
 						player_airTank.put(uuidEntity, AIR_DROWN_TICKS);
-						entityLivingBase.attackEntityFrom(WarpDrive.damageAsphyxia, 2.0F);
+						entityLivingBase.setHealth(entityLivingBase.getHealth() - 2.0F);
+						entityLivingBase.attackEntityFrom(WarpDrive.damageAsphyxia, 0.0F);
 					} else {
 						player_airTank.put(uuidEntity, air - 1);
 					}
