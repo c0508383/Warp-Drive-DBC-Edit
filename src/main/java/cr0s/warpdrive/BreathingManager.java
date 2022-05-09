@@ -32,7 +32,7 @@ public class BreathingManager {
 	private static final int AIR_DROWN_TICKS = 20;
 	private static final int AIR_FIRST_BREATH_TICKS = 300;
 
-	private static final int AIR_FIRST_BREATH_TICKS_HUMAN = 20*10;//1200*5;
+	private static final int AIR_FIRST_BREATH_TICKS_HUMAN = 1200*5;
 	private static final int AIR_FIRST_BREATH_TICKS_SAIYAN = 1200*30;
 	private static final int AIR_FIRST_BREATH_TICKS_HALFSAIYAN = 1200*20;
 	private static final int AIR_FIRST_BREATH_TICKS_NAMEKIAN = 1200*45;
