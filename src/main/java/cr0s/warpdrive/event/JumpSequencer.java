@@ -235,6 +235,7 @@ public class JumpSequencer extends AbstractSequencer {
 						enumJumpSequencerState = EnumJumpSequencerState.LOAD_SOURCE_CHUNKS;
 						chunkLoadX = 0;
 						chunkLoadZ = 0;
+						loadingChunks = true;
 					} else {
 						enumJumpSequencerState = EnumJumpSequencerState.GET_INITIAL_VECTOR;
 					}
@@ -286,6 +287,7 @@ public class JumpSequencer extends AbstractSequencer {
 					enumJumpSequencerState = EnumJumpSequencerState.LOAD_TARGET_CHUNKS;
 					chunkLoadX = 0;
 					chunkLoadZ = 0;
+					loadingChunks = true;
 				}
 				break;
 
@@ -375,7 +377,6 @@ public class JumpSequencer extends AbstractSequencer {
 			for (int z = minZ; z <= maxZ; z++) {
 				chunkCount++;
 				if (chunkCount > sourceWorldTicket.getMaxChunkListDepth()) {
-					loadingChunks = true;
 					return true;
 
 					/*reason.append(String.format("Ship is extending over %d chunks in target world. Max is currently set to %d in config/forgeChunkLoading.cfg. Aborting.",
@@ -418,7 +419,6 @@ public class JumpSequencer extends AbstractSequencer {
 			for (int z = minZ; z <= maxZ; z++) {
 				chunkCount++;
 				if (chunkCount > targetWorldTicket.getMaxChunkListDepth()) {
-					loadingChunks = true;
 					return true;
 
 					/*reason.append(String.format("Ship is extending over %d chunks in target world. Max is currently set to %d in config/forgeChunkLoading.cfg. Aborting.",
