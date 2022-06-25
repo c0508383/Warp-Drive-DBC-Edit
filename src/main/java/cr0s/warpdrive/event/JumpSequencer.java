@@ -71,6 +71,11 @@ public class JumpSequencer extends AbstractSequencer {
 	private boolean loadingChunks = false;
 	private int chunkLoadX, chunkLoadZ;
 
+	private boolean checkingCollisionAndProtection = false;
+	private int checkProtectionX;
+	private int checkProtectionY;
+	private int checkProtectionZ;
+
 	// effect source
 	private Vector3 v3Source;
 
@@ -241,6 +246,10 @@ public class JumpSequencer extends AbstractSequencer {
 						loadingChunks = true;
 					} else {
 						enumJumpSequencerState = EnumJumpSequencerState.GET_INITIAL_VECTOR;
+						checkingCollisionAndProtection = true;
+						checkProtectionX = ship.minX;
+						checkProtectionY = ship.minY;
+						checkProtectionZ = ship.minZ;
 					}
 				}
 				break;
@@ -259,9 +268,9 @@ public class JumpSequencer extends AbstractSequencer {
 					actualIndexInShip = 0;
 					enumJumpSequencerState = EnumJumpSequencerState.CHECK_BORDERS;
 					ship.checkingBorders = true;
-					ship.minX = ship.checkBorderX;
-					ship.minY = ship.checkBorderY;
-					ship.minZ = ship.checkBorderZ;
+					ship.checkBorderX = ship.minX;
+					ship.checkBorderY = ship.minY;
+					ship.checkBorderZ = ship.minZ;
 				}
 				break;
 
@@ -278,19 +287,27 @@ public class JumpSequencer extends AbstractSequencer {
 				}
 				if (isEnabled) {
 					enumJumpSequencerState = EnumJumpSequencerState.GET_INITIAL_VECTOR;
+					checkingCollisionAndProtection = true;
+					checkProtectionX = ship.minX;
+					checkProtectionY = ship.minY;
+					checkProtectionZ = ship.minZ;
 				}
 				break;
 
 			case GET_INITIAL_VECTOR:
 				state_getInitialVector();
-				if (isEnabled) {
+				if (isEnabled && !checkingCollisionAndProtection) {
 					enumJumpSequencerState = EnumJumpSequencerState.ADJUST_JUMP_VECTOR;
+					checkingCollisionAndProtection = true;
+					checkProtectionX = ship.minX;
+					checkProtectionY = ship.minY;
+					checkProtectionZ = ship.minZ;
 				}
 				break;
 
 			case ADJUST_JUMP_VECTOR:
 				state_adjustJumpVector();
-				if (isEnabled) {
+				if (isEnabled && !checkingCollisionAndProtection) {
 					enumJumpSequencerState = EnumJumpSequencerState.LOAD_TARGET_CHUNKS;
 					chunkLoadX = 0;
 					chunkLoadZ = 0;
@@ -761,13 +778,15 @@ public class JumpSequencer extends AbstractSequencer {
 		if (!isPluginCheckDone) {
 			final CheckMovementResult checkMovementResult = checkCollisionAndProtection(transformation, true,
 					"target", new VectorI(0, 0, 0));
-			if (checkMovementResult != null) {
+			if (checkMovementResult != null && !checkingCollisionAndProtection) {
 				final String msg = checkMovementResult.reason + "\nJump aborted!";
 				disable(false, msg);
 				ship.messageToAllPlayersOnShip(msg);
 				LocalProfiler.stop();
 				return;
 			}
+		} else {
+			checkingCollisionAndProtection = false;
 		}
 
 		LocalProfiler.stop();
@@ -1358,7 +1377,7 @@ public class JumpSequencer extends AbstractSequencer {
 		// Register explosion(s) at collision point
 		if (blowPoints > WarpDriveConfig.SHIP_COLLISION_TOLERANCE_BLOCKS) {
 			result = checkMovement(Math.min(1.0D, Math.max(0.0D, (testRange + 1) / (double)originalRange)), true);
-			if (result != null) {
+			if (result != null && !checkingCollisionAndProtection) {
 				/*
 				 * Strength scaling:
 				 * Wither skull = 1
@@ -1547,13 +1566,21 @@ public class JumpSequencer extends AbstractSequencer {
 		// scan target location
 		Block blockSource;
 		Block blockTarget;
-		for (y = ship.minY; y <= ship.maxY; y++) {
-			for (x = ship.minX; x <= ship.maxX; x++) {
-				for (z = ship.minZ; z <= ship.maxZ; z++) {
+		int blocks = 0;
+		for (y = checkProtectionY; y <= ship.maxY; y++) {
+			for (x = checkProtectionX; x <= ship.maxX; x++) {
+				for (z = checkProtectionZ; z <= ship.maxZ; z++) {
+					blocks++;
+
+					if (blocks > WarpDriveConfig.G_BLOCKS_PER_TICK) {
+						return null;
+					}
+
 					coordTarget = transformation.apply(x, y, z);
 					blockSource = sourceWorld.getBlock(x, y, z);
 					blockTarget = targetWorld.getBlock(coordTarget.posX, coordTarget.posY, coordTarget.posZ);
 					if (Dictionary.BLOCKS_ANCHOR.contains(blockTarget)) {
+						checkingCollisionAndProtection = false;
 						result.add(x, y, z,
 								coordTarget.posX + 0.5D - offset.x,
 								coordTarget.posY + 0.5D - offset.y,
@@ -1572,6 +1599,7 @@ public class JumpSequencer extends AbstractSequencer {
 							&& !Dictionary.BLOCKS_EXPANDABLE.contains(blockSource)
 							&& blockTarget != Blocks.air
 							&& !Dictionary.BLOCKS_EXPANDABLE.contains(blockTarget)) {
+						checkingCollisionAndProtection = false;
 						result.add(x, y, z,
 								coordTarget.posX + 0.5D + offset.x * 0.1D,
 								coordTarget.posY + 0.5D + offset.y * 0.1D,
@@ -1590,6 +1618,7 @@ public class JumpSequencer extends AbstractSequencer {
 							&& WarpDriveConfig.G_ENABLE_PROTECTION_CHECKS
 							&& CommonProxy.isBlockPlaceCanceled(null, coordCoreAtTarget.posX, coordCoreAtTarget.posY, coordCoreAtTarget.posZ,
 							targetWorld, coordTarget.posX, coordTarget.posY, coordTarget.posZ, blockSource, 0) ) {
+						checkingCollisionAndProtection = false;
 						result.add(x, y, z,
 								coordTarget.posX,
 								coordTarget.posY,
@@ -1599,9 +1628,17 @@ public class JumpSequencer extends AbstractSequencer {
 										coordTarget.posX, coordTarget.posY, coordTarget.posZ) );
 						return result;
 					}
+
+					checkProtectionZ++;
 				}
+				checkProtectionZ = ship.minZ;
+				checkProtectionX++;
 			}
+			checkProtectionX = ship.minX;
+			checkProtectionY++;
 		}
+
+		checkingCollisionAndProtection = false;
 
 		if (fullCollisionDetails && result.isCollision) {
 			return result;
