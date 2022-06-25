@@ -138,6 +138,7 @@ public class WarpDriveConfig {
 	public static final int LUA_SCRIPTS_TEMPLATES = 1;
 	public static final int LUA_SCRIPTS_ALL = 2;
 	public static int G_LUA_SCRIPTS = LUA_SCRIPTS_ALL;
+	public static boolean G_SCHEMATICSENABLED = true;
 	public static String G_SCHEMALOCATION = "warpDrive_schematics";
 	public static int G_BLOCKS_PER_TICK = 3500;
 	public static boolean G_ENABLE_PROTECTION_CHECKS = true;
@@ -601,6 +602,7 @@ public class WarpDriveConfig {
 		G_LUA_SCRIPTS = Commons.clamp(0, 2,
 				config.get("general", "lua_scripts", G_LUA_SCRIPTS,
 						"LUA scripts to load when connecting machines: 0 = none, 1 = templates in a subfolder, 2 = ready to roll (templates are still provided)").getInt());
+		G_SCHEMATICSENABLED = config.get("general", "schematics_enabled", G_SCHEMATICSENABLED, "Determines whether to enable saving ships as schematics on disk").getBoolean();
 		G_SCHEMALOCATION = config.get("general", "schematic_location", G_SCHEMALOCATION, "Folder where to save ship schematics").getString();
 		G_BLOCKS_PER_TICK = Commons.clamp(100, 100000,
 				config.get("general", "blocks_per_tick", G_BLOCKS_PER_TICK,
