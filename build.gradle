@@ -59,6 +59,18 @@ dependencies {
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
 }
 
+jar {
+    manifest {
+        attributes([
+            "FMLAT": "WarpDrive_at.cfg",
+            "FMLCorePlugin": "cr0s.warpdrive.core.FMLLoadingPlugin",
+            "FMLCorePluginContainsFMLMod": "true",
+        ])
+    }
+    classifier = ''
+    destinationDir = file 'output'
+}
+
 processResources {
     // this will ensure that this task is redone when the versions change.
     inputs.property "version", project.version
@@ -104,18 +116,6 @@ task copyOpenComputersCommons5(type: Copy) {
     into('build/resources/main/assets/warpdrive/lua.OpenComputers/warpdriveWeaponController')
 }
 
-jar {
-    dependsOn copyOpenComputersCommons1, copyOpenComputersCommons2, copyOpenComputersCommons3, copyOpenComputersCommons4, copyOpenComputersCommons5
-    
-    manifest {
-        attributes 'FMLAT': 'WarpDrive_at.cfg'
-        attributes 'FMLCorePlugin': 'cr0s.warpdrive.core.FMLLoadingPlugin',
-                        'FMLCorePluginContainsFMLMod': 'true'
-    }
-    classifier = ''
-    destinationDir = file 'output'
-}
-
 idea {
     module {
         inheritOutputDirs = true
@@ -128,4 +128,10 @@ runClient {
 
 runServer {
     jvmArgs "-Xmx2048m", "-Xms1024m", "-ea"
+}
+
+sourceSets { 
+	main {
+		output.resourcesDir = output.classesDir
+	} 
 }
