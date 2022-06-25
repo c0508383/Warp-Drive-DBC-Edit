@@ -116,6 +116,9 @@ public class JumpSequencer extends AbstractSequencer {
 		this.ship.maxY = shipCore.maxY;
 		this.ship.minZ = shipCore.minZ;
 		this.ship.maxZ = shipCore.maxZ;
+		this.ship.checkBorderX = shipCore.minX;
+		this.ship.checkBorderY = shipCore.minY;
+		this.ship.checkBorderZ = shipCore.minZ;
 		this.ship.shipCore = shipCore;
 		this.shipMovementType = shipMovementType;
 		this.moveX = moveX;
@@ -255,12 +258,16 @@ public class JumpSequencer extends AbstractSequencer {
 				if (isEnabled) {
 					actualIndexInShip = 0;
 					enumJumpSequencerState = EnumJumpSequencerState.CHECK_BORDERS;
+					ship.checkingBorders = true;
+					ship.minX = ship.checkBorderX;
+					ship.minY = ship.checkBorderY;
+					ship.minZ = ship.checkBorderZ;
 				}
 				break;
 
 			case CHECK_BORDERS:
 				state_checkBorders();
-				if (isEnabled) {
+				if (isEnabled && !ship.checkingBorders) {
 					enumJumpSequencerState = EnumJumpSequencerState.SAVE_TO_DISK;
 				}
 				break;

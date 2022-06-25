@@ -40,30 +40,34 @@ public class JumpShip {
 	public int minX;
 	public int minZ;
 	public int minY;
+	public int checkBorderX;
+	public int checkBorderY;
+	public int checkBorderZ;
+	public boolean checkingBorders;
 	public JumpBlock[] jumpBlocks;
 	public int actualMass;
 	public TileEntityShipCore shipCore;
 	public List<MovingEntity> entitiesOnShip;
-	
+
 	public JumpShip() {
 	}
-	
+
 	public static JumpShip createFromFile(final String fileName, final StringBuilder reason) {
 		final NBTTagCompound schematic = Commons.readNBTFromFile(WarpDriveConfig.G_SCHEMALOCATION + "/" + fileName + ".schematic");
 		if (schematic == null) {
 			reason.append(String.format("Schematic not found or unknown error reading it: '%s'.", fileName));
 			return null;
 		}
-		
+
 		final JumpShip jumpShip = new JumpShip();
-		
+
 		// Compute geometry
 		// int shipMass = schematic.getInteger("shipMass");
 		// String shipName = schematic.getString("shipName");
 		// int shipVolume = schematic.getInteger("shipVolume");
 		if (schematic.hasKey("ship")) {
 			jumpShip.readFromNBT(schematic.getCompoundTag("ship"));
-			
+
 		} else {
 			// Set deployment variables
 			final short width = schematic.getShort("Width");
@@ -79,36 +83,36 @@ public class JumpShip {
 			jumpShip.coreY = 0;
 			jumpShip.coreZ = 0;
 			jumpShip.jumpBlocks = new JumpBlock[width * height * length];
-			
+
 			// Read blocks and TileEntities from NBT to internal storage array
 			final byte localBlocks[] = schematic.getByteArray("Blocks");
 			final byte localAddBlocks[] = schematic.hasKey("AddBlocks") ? schematic.getByteArray("AddBlocks") : null;
 			final byte localMetadata[] = schematic.getByteArray("Data");
-			
+
 			// Load Tile Entities
 			final NBTTagCompound[] tileEntities = new NBTTagCompound[jumpShip.jumpBlocks.length];
 			final NBTTagList tagListTileEntities = schematic.getTagList("TileEntities", Constants.NBT.TAG_COMPOUND);
-			
+
 			for (int i = 0; i < tagListTileEntities.tagCount(); i++) {
 				final NBTTagCompound tagTileEntity = tagListTileEntities.getCompoundTagAt(i);
 				final int teX = tagTileEntity.getInteger("x");
 				final int teY = tagTileEntity.getInteger("y");
 				final int teZ = tagTileEntity.getInteger("z");
-				
+
 				tileEntities[teX + (teY * length + teZ) * width] = tagTileEntity;
 			}
-			
+
 			// Create list of blocks to deploy
 			for (int x = 0; x < width; x++) {
 				for (int y = 0; y < height; y++) {
 					for (int z = 0; z < length; z++) {
 						final int index = x + (y * length + z) * width;
 						JumpBlock jumpBlock = new JumpBlock();
-						
+
 						jumpBlock.x = x;
 						jumpBlock.y = y;
 						jumpBlock.z = z;
-						
+
 						// rebuild block id from signed byte + nibble tables
 						int blockId = localBlocks[index];
 						if (blockId < 0) {
@@ -125,11 +129,11 @@ public class JumpShip {
 								blockId += (MSB & 0xF0) << 4;
 							}
 						}
-						
+
 						jumpBlock.block = Block.getBlockById(blockId);
 						jumpBlock.blockMeta = (localMetadata[index]) & 0x0F;
 						jumpBlock.blockNBT = tileEntities[index];
-						
+
 						if (jumpBlock.block != null) {
 							if (WarpDriveConfig.LOGGING_BUILDING) {
 								if (tileEntities[index] == null) {
@@ -152,7 +156,7 @@ public class JumpShip {
 		}
 		return jumpShip;
 	}
-	
+
 	public void messageToAllPlayersOnShip(final String message) {
 		final String messageFormatted = String.format("[%s] %s",
 		                                             ((shipCore != null && !shipCore.shipName.isEmpty()) ? shipCore.shipName : "ShipCore"),
@@ -162,7 +166,7 @@ public class JumpShip {
 			final StringBuilder reason = new StringBuilder();
 			saveEntities(reason);
 		}
-		
+
 		WarpDrive.logger.info(this + " messageToAllPlayersOnShip: " + message);
 		for (final MovingEntity movingEntity : entitiesOnShip) {
 			final Entity entity = movingEntity.getEntity();
@@ -171,25 +175,25 @@ public class JumpShip {
 			}
 		}
 	}
-	
+
 	public boolean saveEntities(final StringBuilder reason) {
 		boolean isSuccess = true;
 		entitiesOnShip = new ArrayList<>();
-		
+
 		if (worldObj == null) {
 			reason.append("Invalid call to saveEntities, please report it to mod author");
 			return false;
 		}
-		
+
 		final AxisAlignedBB axisalignedbb = AxisAlignedBB.getBoundingBox(minX, minY, minZ, maxX + 0.99D, maxY + 0.99D, maxZ + 0.99D);
-		
+
 		final List<Entity> list = worldObj.getEntitiesWithinAABBExcludingEntity(null, axisalignedbb);
-		
+
 		for (final Entity entity : list) {
 			if (entity == null) {
 				continue;
 			}
-			
+
 			final String id = EntityList.getEntityString(entity);
 			if (Dictionary.ENTITIES_ANCHOR.contains(id)) {
 				if (reason.length() > 0) {
@@ -216,10 +220,10 @@ public class JumpShip {
 			final MovingEntity movingEntity = new MovingEntity(entity);
 			entitiesOnShip.add(movingEntity);
 		}
-		
+
 		return isSuccess;
 	}
-	
+
 	public void setCaptain(final String playerName) {
 		entitiesOnShip = new ArrayList<>();
 		final EntityPlayerMP entityPlayerMP = Commons.getOnlinePlayerByName(playerName);
@@ -230,7 +234,7 @@ public class JumpShip {
 		final MovingEntity movingEntity = new MovingEntity(entityPlayerMP);
 		entitiesOnShip.add(movingEntity);
 	}
-	
+
 	public boolean isUnlimited() {
 		if (entitiesOnShip == null) {
 			return false;
@@ -242,7 +246,7 @@ public class JumpShip {
 		}
 		return false;
 	}
-	
+
 	@Override
 	public String toString() {
 		return String.format("%s/%d \'%s\' @ %s (%d %d %d)",
@@ -251,49 +255,67 @@ public class JumpShip {
 			worldObj == null ? "~NULL~" : worldObj.provider.getDimensionName(),
 			coreX, coreY, coreZ);
 	}
-	
+
 	public boolean checkBorders(final StringBuilder reason) {
 		// Abort jump if blocks with TE are connecting to the ship (avoid crash when splitting multi-blocks)
-		for (int x = minX - 1; x <= maxX + 1; x++) {
+		int blocks = 0;
+
+		for (int x = checkBorderX - 1; x <= maxX + 1; x++) {
 			final boolean xBorder = (x == minX - 1) || (x == maxX + 1);
-			for (int z = minZ - 1; z <= maxZ + 1; z++) {
+			for (int z = checkBorderZ - 1; z <= maxZ + 1; z++) {
 				final boolean zBorder = (z == minZ - 1) || (z == maxZ + 1);
-				for (int y = minY - 1; y <= maxY + 1; y++) {
+				for (int y = checkBorderY - 1; y <= maxY + 1; y++) {
+					blocks++;
+
+					if (blocks > WarpDriveConfig.G_BLOCKS_PER_TICK) {
+						return true;
+					}
+
 					final boolean yBorder = (y == minY - 1) || (y == maxY + 1);
 					if ((y < 0) || (y > 255)) {
+						checkBorderY++;
 						continue;
 					}
 					if (!(xBorder || yBorder || zBorder)) {
+						checkBorderY++;
 						continue;
 					}
-					
+
 					final Block block = worldObj.getBlock(x, y, z);
-					
+
 					// Skipping any air block & ignored blocks
 					if ( block.isAir(worldObj, x, y, z)
 					  || Dictionary.BLOCKS_LEFTBEHIND.contains(block) ) {
+						checkBorderY++;
 						continue;
 					}
-					
+
 					// Skipping non-movable blocks
 					if (Dictionary.BLOCKS_ANCHOR.contains(block)) {
+						checkBorderY++;
 						continue;
 					}
-					
+
 					// Skipping blocks without tile entities
 					final TileEntity tileEntity = worldObj.getTileEntity(x, y, z);
 					if (tileEntity == null) {
+						checkBorderY++;
 						continue;
 					}
-					
+
 					reason.append(String.format("Ship snagged by %s at (%d %d %d). Sneak right click the ship core to see your ship dimensions, then update your ship dimensions.",
 					                            block.getLocalizedName(), x, y, z));
 					worldObj.createExplosion(null, x, y, z, Math.min(4F * 30, 4F * (jumpBlocks.length / 50)), false);
 					return false;
 				}
+				checkBorderY = minY;
+				checkBorderZ++;
 			}
+			checkBorderZ = minZ;
+			checkBorderX++;
 		}
-		
+
+		checkingBorders = false;
 		return true;
 	}
 
