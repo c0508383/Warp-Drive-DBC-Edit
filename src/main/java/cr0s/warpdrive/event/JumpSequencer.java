@@ -54,6 +54,8 @@ import net.minecraftforge.common.ForgeChunkManager.Ticket;
 import net.minecraftforge.common.ForgeChunkManager.Type;
 import net.minecraftforge.common.MinecraftForge;
 
+import static cr0s.warpdrive.data.EnumShipMovementType.*;
+
 public class JumpSequencer extends AbstractSequencer {
 
 	// Jump vector
@@ -296,7 +298,7 @@ public class JumpSequencer extends AbstractSequencer {
 
 			case GET_INITIAL_VECTOR:
 				state_getInitialVector();
-				if (isEnabled && !checkingCollisionAndProtection) {
+				if (isEnabled && (checkingCollisionAndProtection || shipMovementType == PLANET_MOVING || shipMovementType == SPACE_MOVING || shipMovementType == HYPERSPACE_MOVING)) {
 					enumJumpSequencerState = EnumJumpSequencerState.ADJUST_JUMP_VECTOR;
 					checkingCollisionAndProtection = true;
 					checkProtectionX = ship.minX;
