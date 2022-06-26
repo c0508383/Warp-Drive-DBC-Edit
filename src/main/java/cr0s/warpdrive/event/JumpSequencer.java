@@ -300,7 +300,7 @@ public class JumpSequencer extends AbstractSequencer {
 
 			case GET_INITIAL_VECTOR:
 				state_getInitialVector();
-				if (isEnabled && (!checkingCollisionAndProtection && (shipMovementType == PLANET_MOVING || shipMovementType == SPACE_MOVING || shipMovementType == HYPERSPACE_MOVING))) {
+				if (isEnabled && !checkingCollisionAndProtection) {
 					enumJumpSequencerState = EnumJumpSequencerState.ADJUST_JUMP_VECTOR;
 					checkingCollisionAndProtection = true;
 					checkProtectionX = ship.minX;
@@ -667,6 +667,7 @@ public class JumpSequencer extends AbstractSequencer {
 				moveX = destX - ship.coreX;
 				moveY = destY - ship.coreY;
 				moveZ = destZ - ship.coreZ;
+				checkingCollisionAndProtection = false;
 				break;
 
 			case INSTANTIATE:
@@ -675,16 +676,19 @@ public class JumpSequencer extends AbstractSequencer {
 				moveY = destY - ship.coreY;
 				moveZ = destZ - ship.coreZ;
 				isPluginCheckDone = true;
+				checkingCollisionAndProtection = false;
 				break;
 
 			case PLANET_TAKEOFF:
 				// enter space at current altitude
 				moveY = 0;
+				checkingCollisionAndProtection = false;
 				break;
 
 			case PLANET_LANDING:
 				// re-enter atmosphere at max altitude
 				moveY = 245 - ship.maxY;
+				checkingCollisionAndProtection = false;
 				break;
 
 			case PLANET_MOVING:
@@ -707,11 +711,14 @@ public class JumpSequencer extends AbstractSequencer {
 						firstAdjustmentReason = result;
 						isPluginCheckDone = true;
 					}
+				} else {
+					checkingCollisionAndProtection = false;
 				}
 				break;
 
 			case HYPERSPACE_ENTERING:
 			case HYPERSPACE_EXITING:
+				checkingCollisionAndProtection = false;
 				break;
 
 			default:
