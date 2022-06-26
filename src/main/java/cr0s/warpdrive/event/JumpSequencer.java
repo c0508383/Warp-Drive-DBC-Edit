@@ -1088,8 +1088,10 @@ public class JumpSequencer extends AbstractSequencer {
 				break;
 			}
 
+			final JumpBlock jumpBlock = ship.jumpBlocks[actualIndexInShip];
+			ChunkCoordinates newBlockCoordinate = null;
+
 			{
-				final JumpBlock jumpBlock = ship.jumpBlocks[actualIndexInShip];
 				if (jumpBlock != null) {
 					if (WarpDriveConfig.LOGGING_JUMPBLOCKS) {
 						WarpDrive.logger.info("Deploying from " + jumpBlock.x + " " + jumpBlock.y + " " + jumpBlock.z + " of " + jumpBlock.block + "@" + jumpBlock.blockMeta);
@@ -1099,7 +1101,7 @@ public class JumpSequencer extends AbstractSequencer {
 						jumpBlock.fillEnergyStorage();
 					}
 
-					final ChunkCoordinates target = jumpBlock.deploy(targetWorld, transformation);
+					newBlockCoordinate = jumpBlock.deploy(targetWorld, transformation);
 
 					if (shipMovementType != EnumShipMovementType.INSTANTIATE
 							&& shipMovementType != EnumShipMovementType.RESTORE) {
@@ -1109,13 +1111,12 @@ public class JumpSequencer extends AbstractSequencer {
 					indexEffect--;
 					if (indexEffect <= 0) {
 						indexEffect = periodEffect;
-						doBlockEffect(jumpBlock, target);
+						doBlockEffect(jumpBlock, newBlockCoordinate);
 					}
 				}
 			}
 
 			{
-				final JumpBlock jumpBlock = ship.jumpBlocks[actualIndexInShip];//ship.jumpBlocks[ship.jumpBlocks.length - actualIndexInShip - 1];
 				if (jumpBlock != null) {
 					if (WarpDriveConfig.LOGGING_JUMPBLOCKS) {
 						WarpDrive.logger.info("Removing block " + jumpBlock.block + "@" + jumpBlock.blockMeta + " at " + jumpBlock.x + " " + jumpBlock.y + " " + jumpBlock.z);
@@ -1140,6 +1141,30 @@ public class JumpSequencer extends AbstractSequencer {
 
 					final ChunkCoordinates target = transformation.apply(jumpBlock.x, jumpBlock.y, jumpBlock.z);
 					JumpBlock.refreshBlockStateOnClient(targetWorld, target.posX, target.posY, target.posZ);
+				}
+			}
+
+			{
+				if ( jumpBlock != null && newBlockCoordinate != null
+						&& shipMovementType != EnumShipMovementType.INSTANTIATE
+						&& shipMovementType != EnumShipMovementType.RESTORE ) {
+					for (final MovingEntity movingEntity : ship.entitiesOnShip) {
+						final Entity entity = movingEntity.getEntity();
+						if (entity == null) {
+							continue;
+						}
+
+						if (!(Math.floor(entity.posX) == jumpBlock.x
+								&& Math.floor(entity.posY-1) == jumpBlock.y
+								&& Math.floor(entity.posZ) == jumpBlock.z))
+							continue;
+
+						final double newEntityX = newBlockCoordinate.posX;
+						final double newEntityY = newBlockCoordinate.posY;
+						final double newEntityZ = newBlockCoordinate.posZ;
+
+						Commons.moveEntity(entity, targetWorld, new Vector3(newEntityX, newEntityY, newEntityZ));
+					}
 				}
 			}
 
