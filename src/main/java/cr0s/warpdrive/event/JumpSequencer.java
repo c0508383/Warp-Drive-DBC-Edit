@@ -74,6 +74,7 @@ public class JumpSequencer extends AbstractSequencer {
 	private int chunkLoadX, chunkLoadZ;
 
 	private boolean checkingCollisionAndProtection = false;
+	private int collidedBlocks;
 	private int checkProtectionX;
 	private int checkProtectionY;
 	private int checkProtectionZ;
@@ -290,6 +291,7 @@ public class JumpSequencer extends AbstractSequencer {
 				if (isEnabled) {
 					enumJumpSequencerState = EnumJumpSequencerState.GET_INITIAL_VECTOR;
 					checkingCollisionAndProtection = true;
+					collidedBlocks = 0;
 					checkProtectionX = ship.minX;
 					checkProtectionY = ship.minY;
 					checkProtectionZ = ship.minZ;
@@ -298,7 +300,7 @@ public class JumpSequencer extends AbstractSequencer {
 
 			case GET_INITIAL_VECTOR:
 				state_getInitialVector();
-				if (isEnabled && (checkingCollisionAndProtection || shipMovementType == PLANET_MOVING || shipMovementType == SPACE_MOVING || shipMovementType == HYPERSPACE_MOVING)) {
+				if (isEnabled && (!checkingCollisionAndProtection && (shipMovementType == PLANET_MOVING || shipMovementType == SPACE_MOVING || shipMovementType == HYPERSPACE_MOVING))) {
 					enumJumpSequencerState = EnumJumpSequencerState.ADJUST_JUMP_VECTOR;
 					checkingCollisionAndProtection = true;
 					checkProtectionX = ship.minX;
@@ -657,7 +659,9 @@ public class JumpSequencer extends AbstractSequencer {
 
 		// Calculate jump vector
 		isPluginCheckDone = false;
-		firstAdjustmentReason = "";
+		if (firstAdjustmentReason == null || firstAdjustmentReason.isEmpty()) {
+			firstAdjustmentReason = "";
+		}
 		switch (shipMovementType) {
 			case GATE_ACTIVATING:
 				moveX = destX - ship.coreX;
@@ -698,8 +702,11 @@ public class JumpSequencer extends AbstractSequencer {
 				final int rangeX = Math.abs(moveX) - (ship.maxX - ship.minX);
 				final int rangeZ = Math.abs(moveZ) - (ship.maxZ - ship.minZ);
 				if (Math.max(rangeX, rangeZ) < 256) {
-					firstAdjustmentReason = getPossibleJumpDistance();
-					isPluginCheckDone = true;
+					String result = getPossibleJumpDistance();
+					if (!result.isEmpty()) {
+						firstAdjustmentReason = result;
+						isPluginCheckDone = true;
+					}
 				}
 				break;
 
@@ -780,7 +787,9 @@ public class JumpSequencer extends AbstractSequencer {
 		if (!isPluginCheckDone) {
 			final CheckMovementResult checkMovementResult = checkCollisionAndProtection(transformation, true,
 					"target", new VectorI(0, 0, 0));
-			if (checkMovementResult != null && !checkingCollisionAndProtection) {
+			if (checkMovementResult != null) {
+				checkingCollisionAndProtection = false;
+
 				final String msg = checkMovementResult.reason + "\nJump aborted!";
 				disable(false, msg);
 				ship.messageToAllPlayersOnShip(msg);
@@ -1350,7 +1359,6 @@ public class JumpSequencer extends AbstractSequencer {
 		}
 		final int originalRange = Math.max(Math.abs(moveX), Math.max(Math.abs(moveY), Math.abs(moveZ)));
 		int testRange = originalRange;
-		int blowPoints = 0;
 		collisionDetected = false;
 
 		CheckMovementResult result;
@@ -1366,20 +1374,21 @@ public class JumpSequencer extends AbstractSequencer {
 			}
 
 			if (result.isCollision) {
-				blowPoints++;
+				collidedBlocks++;
 			}
 			testRange--;
 		}
 		final VectorI finalMovement = getMovementVector(testRange / (double)originalRange);
 
 		if (originalRange != testRange && WarpDriveConfig.LOGGING_JUMP) {
-			WarpDrive.logger.info(this + " Jump range adjusted from " + originalRange + " to " + testRange + " after " + blowPoints + " collisions");
+			WarpDrive.logger.info(this + " Jump range adjusted from " + originalRange + " to " + testRange + " after " + collidedBlocks + " collisions");
 		}
 
 		// Register explosion(s) at collision point
-		if (blowPoints > WarpDriveConfig.SHIP_COLLISION_TOLERANCE_BLOCKS) {
+		if (collidedBlocks > WarpDriveConfig.SHIP_COLLISION_TOLERANCE_BLOCKS) {
 			result = checkMovement(Math.min(1.0D, Math.max(0.0D, (testRange + 1) / (double)originalRange)), true);
-			if (result != null && !checkingCollisionAndProtection) {
+			if (result != null) {
+				checkingCollisionAndProtection = false;
 				/*
 				 * Strength scaling:
 				 * Wither skull = 1
@@ -1393,10 +1402,10 @@ public class JumpSequencer extends AbstractSequencer {
 						+ (float) Math.sqrt(Math.min(1.0D, Math.max(0.0D, ship.shipCore.shipMass - WarpDriveConfig.SHIP_VOLUME_MAX_ON_PLANET_SURFACE)
 						/ WarpDriveConfig.SHIP_VOLUME_MIN_FOR_HYPERSPACE));
 				collisionDetected = true;
-				collisionStrength = (4.0F + blowPoints - WarpDriveConfig.SHIP_COLLISION_TOLERANCE_BLOCKS) * massCorrection;
+				collisionStrength = (4.0F + collidedBlocks - WarpDriveConfig.SHIP_COLLISION_TOLERANCE_BLOCKS) * massCorrection;
 				collisionAtSource = result.atSource;
 				collisionAtTarget = result.atTarget;
-				WarpDrive.logger.info(this + " Reporting " + collisionAtTarget.size() + " collisions points after " + blowPoints
+				WarpDrive.logger.info(this + " Reporting " + collisionAtTarget.size() + " collisions points after " + collidedBlocks
 						+ " blowPoints with " + String.format("%.2f", massCorrection) + " ship mass correction => "
 						+ String.format("%.2f", collisionStrength) + " explosion strength");
 			} else {
@@ -1574,15 +1583,10 @@ public class JumpSequencer extends AbstractSequencer {
 				for (z = checkProtectionZ; z <= ship.maxZ; z++) {
 					blocks++;
 
-					if (blocks > WarpDriveConfig.G_BLOCKS_PER_TICK) {
-						return null;
-					}
-
 					coordTarget = transformation.apply(x, y, z);
 					blockSource = sourceWorld.getBlock(x, y, z);
 					blockTarget = targetWorld.getBlock(coordTarget.posX, coordTarget.posY, coordTarget.posZ);
 					if (Dictionary.BLOCKS_ANCHOR.contains(blockTarget)) {
-						checkingCollisionAndProtection = false;
 						result.add(x, y, z,
 								coordTarget.posX + 0.5D - offset.x,
 								coordTarget.posY + 0.5D - offset.y,
@@ -1590,18 +1594,13 @@ public class JumpSequencer extends AbstractSequencer {
 								true,
 								String.format("Impassable %s detected at destination (%d %d %d)",
 										blockTarget.getLocalizedName(), coordTarget.posX, coordTarget.posY, coordTarget.posZ) );
-						if (!fullCollisionDetails) {
-							return result;
-						} else if (WarpDriveConfig.LOGGING_JUMP) {
-							WarpDrive.logger.info("Anchor collision at " + context);
-						}
+						return result;
 					}
 
 					if ( blockSource != Blocks.air
 							&& !Dictionary.BLOCKS_EXPANDABLE.contains(blockSource)
 							&& blockTarget != Blocks.air
 							&& !Dictionary.BLOCKS_EXPANDABLE.contains(blockTarget)) {
-						checkingCollisionAndProtection = false;
 						result.add(x, y, z,
 								coordTarget.posX + 0.5D + offset.x * 0.1D,
 								coordTarget.posY + 0.5D + offset.y * 0.1D,
@@ -1609,18 +1608,13 @@ public class JumpSequencer extends AbstractSequencer {
 								true,
 								String.format("Obstacle %s detected at (%d %d %d)",
 										blockTarget.getLocalizedName(), coordTarget.posX, coordTarget.posY, coordTarget.posZ) );
-						if (!fullCollisionDetails) {
-							return result;
-						} else if (WarpDriveConfig.LOGGING_JUMP) {
-							WarpDrive.logger.info("Hard collision at " + context);
-						}
+						return result;
 					}
 
 					if ( blockSource != Blocks.air
 							&& WarpDriveConfig.G_ENABLE_PROTECTION_CHECKS
 							&& CommonProxy.isBlockPlaceCanceled(null, coordCoreAtTarget.posX, coordCoreAtTarget.posY, coordCoreAtTarget.posZ,
 							targetWorld, coordTarget.posX, coordTarget.posY, coordTarget.posZ, blockSource, 0) ) {
-						checkingCollisionAndProtection = false;
 						result.add(x, y, z,
 								coordTarget.posX,
 								coordTarget.posY,
@@ -1629,6 +1623,10 @@ public class JumpSequencer extends AbstractSequencer {
 								String.format("Ship is entering a protected area at (%d %d %d)",
 										coordTarget.posX, coordTarget.posY, coordTarget.posZ) );
 						return result;
+					}
+
+					if (blocks > WarpDriveConfig.G_BLOCKS_PER_TICK) {
+						return null;
 					}
 
 					checkProtectionZ++;
@@ -1641,12 +1639,7 @@ public class JumpSequencer extends AbstractSequencer {
 		}
 
 		checkingCollisionAndProtection = false;
-
-		if (fullCollisionDetails && result.isCollision) {
-			return result;
-		} else {
-			return null;
-		}
+		return null;
 	}
 
 	private CheckMovementResult checkMovement(final double ratio, final boolean fullCollisionDetails) {
