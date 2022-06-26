@@ -359,11 +359,11 @@ public class JumpSequencer extends AbstractSequencer {
 				if (enforceEntitiesPosition) {
 					restoreEntitiesPosition();
 				}
-				state_removeBlocks();
+				//state_removeBlocks();
 
-				if (actualIndexInShip >= ship.jumpBlocks.length - 1) {
+				//if (actualIndexInShip >= ship.jumpBlocks.length - 1) {
 					enumJumpSequencerState = EnumJumpSequencerState.CHUNK_UNLOADING;
-				}
+				//}
 				break;
 
 			case CHUNK_UNLOADING:
@@ -1088,29 +1088,61 @@ public class JumpSequencer extends AbstractSequencer {
 				break;
 			}
 
-			final JumpBlock jumpBlock = ship.jumpBlocks[actualIndexInShip];
-			if (jumpBlock != null) {
-				if (WarpDriveConfig.LOGGING_JUMPBLOCKS) {
-					WarpDrive.logger.info("Deploying from " + jumpBlock.x + " " + jumpBlock.y + " " + jumpBlock.z + " of " + jumpBlock.block + "@" + jumpBlock.blockMeta);
-				}
-				if (shipMovementType == EnumShipMovementType.INSTANTIATE) {
-					jumpBlock.removeUniqueIDs();
-					jumpBlock.fillEnergyStorage();
-				}
+			{
+				final JumpBlock jumpBlock = ship.jumpBlocks[actualIndexInShip];
+				if (jumpBlock != null) {
+					if (WarpDriveConfig.LOGGING_JUMPBLOCKS) {
+						WarpDrive.logger.info("Deploying from " + jumpBlock.x + " " + jumpBlock.y + " " + jumpBlock.z + " of " + jumpBlock.block + "@" + jumpBlock.blockMeta);
+					}
+					if (shipMovementType == EnumShipMovementType.INSTANTIATE) {
+						jumpBlock.removeUniqueIDs();
+						jumpBlock.fillEnergyStorage();
+					}
 
-				final ChunkCoordinates target = jumpBlock.deploy(targetWorld, transformation);
+					final ChunkCoordinates target = jumpBlock.deploy(targetWorld, transformation);
 
-				if ( shipMovementType != EnumShipMovementType.INSTANTIATE
-						&& shipMovementType != EnumShipMovementType.RESTORE ) {
-					sourceWorld.removeTileEntity(jumpBlock.x, jumpBlock.y, jumpBlock.z);
-				}
+					if (shipMovementType != EnumShipMovementType.INSTANTIATE
+							&& shipMovementType != EnumShipMovementType.RESTORE) {
+						sourceWorld.removeTileEntity(jumpBlock.x, jumpBlock.y, jumpBlock.z);
+					}
 
-				indexEffect--;
-				if (indexEffect <= 0) {
-					indexEffect = periodEffect;
-					doBlockEffect(jumpBlock, target);
+					indexEffect--;
+					if (indexEffect <= 0) {
+						indexEffect = periodEffect;
+						doBlockEffect(jumpBlock, target);
+					}
 				}
 			}
+
+			{
+				final JumpBlock jumpBlock = ship.jumpBlocks[actualIndexInShip];//ship.jumpBlocks[ship.jumpBlocks.length - actualIndexInShip - 1];
+				if (jumpBlock != null) {
+					if (WarpDriveConfig.LOGGING_JUMPBLOCKS) {
+						WarpDrive.logger.info("Removing block " + jumpBlock.block + "@" + jumpBlock.blockMeta + " at " + jumpBlock.x + " " + jumpBlock.y + " " + jumpBlock.z);
+					}
+
+					if (sourceWorld != null) {
+						if (jumpBlock.weakTileEntity != null) {
+							if (WarpDriveConfig.LOGGING_JUMPBLOCKS) {
+								WarpDrive.logger.info("Removing tile entity at " + jumpBlock.x + " " + jumpBlock.y + " " + jumpBlock.z);
+							}
+							sourceWorld.removeTileEntity(jumpBlock.x, jumpBlock.y, jumpBlock.z);
+						}
+						try {
+							JumpBlock.setBlockNoLight(sourceWorld, jumpBlock.x, jumpBlock.y, jumpBlock.z, Blocks.air, 0, 2);
+						} catch (final Exception exception) {
+							WarpDrive.logger.info("Exception while removing " + jumpBlock.block + "@" + jumpBlock.blockMeta + " at " + jumpBlock.x + " " + jumpBlock.y + " " + jumpBlock.z);
+							if (WarpDriveConfig.LOGGING_JUMPBLOCKS) {
+								exception.printStackTrace();
+							}
+						}
+					}
+
+					final ChunkCoordinates target = transformation.apply(jumpBlock.x, jumpBlock.y, jumpBlock.z);
+					JumpBlock.refreshBlockStateOnClient(targetWorld, target.posX, target.posY, target.posZ);
+				}
+			}
+
 			actualIndexInShip++;
 		}
 
